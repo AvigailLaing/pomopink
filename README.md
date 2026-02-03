@@ -12,7 +12,7 @@
 
 <br>
 
-**pomopink.** the place where productivity becomes cute, romanticizeable, and something you look forward to.
+**pomopink.** the task manager that allows you to romanticize productivity.
 
 ### [✨ Try it live at www.pomopink.com](https://www.pomopink.com)
 
