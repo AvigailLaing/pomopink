@@ -6,8 +6,9 @@ import Checklist from './components/Checklist';
 import Notes from './components/Notes';
 import Dashboard from './components/Dashboard';
 import { getMotivationalCheer, getCooldownRemaining } from './services/geminiService';
+import { audioService } from './services/audioService';
 import { TimerMode, Task } from './types';
-import { Heart, Sparkles, Clock, LayoutDashboard } from 'lucide-react';
+import { Heart, Sparkles, Clock, LayoutDashboard, Volume2, VolumeX } from 'lucide-react';
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<TimerMode>('work');
@@ -15,6 +16,7 @@ const App: React.FC = () => {
   const [isCheerLoading, setIsCheerLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => localStorage.getItem('pomopink-muted') === 'true');
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notes, setNotes] = useState("");
@@ -29,9 +31,14 @@ const App: React.FC = () => {
     return 0;
   });
 
+  useEffect(() => {
+    audioService.setMuted(isMuted);
+    localStorage.setItem('pomopink-muted', String(isMuted));
+  }, [isMuted]);
+
   const refreshCheer = async () => {
     if (getCooldownRemaining() > 0) return;
-
+    audioService.playPop();
     setIsCheerLoading(true);
     const pendingCount = tasks.filter((t: any) => !t.completed).length;
     const newCheer = await getMotivationalCheer(pendingCount);
@@ -53,7 +60,6 @@ const App: React.FC = () => {
     
     const ticker = setInterval(() => {
       setCooldown(getCooldownRemaining());
-      // Re-sync tasks and notes in case they changed in components
       const currTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]');
       const currNotes = localStorage.getItem('pomodoro-notes') || "";
       setTasks(currTasks);
@@ -74,6 +80,14 @@ const App: React.FC = () => {
     setPomodorosCompleted(prev => prev + 1);
   };
 
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    if (isMuted) {
+      // Small feedback sound when unmuting
+      setTimeout(() => audioService.playPop(), 50);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full relative p-4 md:p-8 flex flex-col items-center">
       <AuraHeart />
@@ -89,27 +103,33 @@ const App: React.FC = () => {
           </h1>
           <Heart className="text-pink-400 fill-pink-400/30 animate-bounce" size={24} />
         </div>
-        
-        <button 
-          onClick={refreshCheer}
-          disabled={isCheerLoading || cooldown > 0}
-          className={`relative group transition-all ${cooldown > 0 ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}
-        >
-          <div className="px-8 py-3 bg-white/40 backdrop-blur-xl border border-white/50 rounded-full text-pink-600 text-sm font-bold shadow-lg shadow-pink-200/50 flex items-center gap-2">
-            {isCheerLoading ? (
-              "Brewing magic..."
-            ) : cooldown > 0 ? (
-              <span className="flex items-center gap-2 italic text-pink-300">
-                <Clock size={14} /> Recharging ({Math.ceil(cooldown/1000)}s)
-              </span>
-            ) : (
-              cheer
-            )}
-          </div>
-          <div className={`absolute -top-3 -right-3 bg-white p-1.5 rounded-full shadow-md ${cooldown > 0 ? 'text-pink-200' : 'text-pink-400'}`}>
-            <Sparkles size={14} fill="currentColor" />
-          </div>
-        </button>
+
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={refreshCheer}
+            disabled={isCheerLoading || cooldown > 0}
+            className={`relative group transition-all ${cooldown > 0 ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}
+          >
+            <div className="px-8 py-3 bg-white/40 backdrop-blur-xl border border-white/50 rounded-full text-pink-600 text-sm font-bold shadow-lg shadow-pink-200/50 flex items-center gap-2">
+              {isCheerLoading ? "Brewing magic..." : cooldown > 0 ? (
+                <span className="flex items-center gap-2 italic text-pink-300">
+                  <Clock size={14} /> Recharging ({Math.ceil(cooldown/1000)}s)
+                </span>
+              ) : cheer}
+            </div>
+            <div className={`absolute -top-3 -right-3 bg-white p-1.5 rounded-full shadow-md ${cooldown > 0 ? 'text-pink-200' : 'text-pink-400'}`}>
+              <Sparkles size={14} fill="currentColor" />
+            </div>
+          </button>
+
+          <button 
+            onClick={toggleMute}
+            className="p-3 bg-white/40 backdrop-blur-xl border border-white/50 rounded-full text-pink-400 hover:text-pink-600 transition-all hover:scale-110 shadow-lg shadow-pink-100"
+            title={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          </button>
+        </div>
       </header>
 
       {/* Main Content Grid */}
@@ -130,9 +150,8 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Floating Action Button for Dashboard */}
       <button 
-        onClick={() => setShowDashboard(true)}
+        onClick={() => { audioService.playPop(); setShowDashboard(true); }}
         className="fixed bottom-8 right-8 w-16 h-16 bg-pink-600 text-white rounded-full shadow-2xl shadow-pink-400 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 print:hidden"
         title="Daily Summary"
       >
@@ -148,7 +167,6 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Footer Info */}
       <footer className="mt-16 text-pink-400/80 text-[10px] font-bold tracking-[0.3em] uppercase flex items-center gap-2 pb-8">
         Built with <Heart size={10} className="fill-pink-400/50" /> for your cozy focus
       </footer>

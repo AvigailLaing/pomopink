@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, CheckCircle2, Circle, ChevronUp, ChevronDown, ListPlus } from 'lucide-react';
 import { Task, SubTask } from '../types';
+import { audioService } from '../services/audioService';
 
 const Checklist: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>(() => {
     const saved = localStorage.getItem('pomodoro-tasks');
     const parsed = saved ? JSON.parse(saved) : [];
-    // Migrate old tasks that might not have subtasks array
     return parsed.map((t: any) => ({
       ...t,
       subtasks: t.subtasks || []
@@ -24,6 +24,7 @@ const Checklist: React.FC = () => {
   const addTask = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!inputValue.trim()) return;
+    audioService.playPop();
     const newTask: Task = {
       id: Date.now().toString(),
       text: inputValue,
@@ -36,6 +37,7 @@ const Checklist: React.FC = () => {
 
   const addSubtask = (taskId: string) => {
     if (!subtaskValue.trim()) return;
+    audioService.playPop();
     setTasks(tasks.map(t => {
       if (t.id === taskId) {
         return {
@@ -53,7 +55,8 @@ const Checklist: React.FC = () => {
     setTasks(tasks.map(t => {
       if (t.id === id) {
         const nextState = !t.completed;
-        // If we complete main task, complete all subtasks too
+        if (nextState) audioService.playSuccess();
+        else audioService.playPop();
         return { 
           ...t, 
           completed: nextState,
@@ -67,11 +70,15 @@ const Checklist: React.FC = () => {
   const toggleSubtask = (taskId: string, subtaskId: string) => {
     setTasks(tasks.map(t => {
       if (t.id === taskId) {
-        const newSubtasks = t.subtasks.map(st => 
-          st.id === subtaskId ? { ...st, completed: !st.completed } : st
-        );
-        // If any subtask is unfinished, the main task shouldn't be fully "done" manually
-        // But let's allow users to toggle main task independently if they want.
+        const newSubtasks = t.subtasks.map(st => {
+          if (st.id === subtaskId) {
+            const next = !st.completed;
+            if (next) audioService.playSuccess();
+            else audioService.playPop();
+            return { ...st, completed: next };
+          }
+          return st;
+        });
         return { ...t, subtasks: newSubtasks };
       }
       return t;
@@ -79,10 +86,12 @@ const Checklist: React.FC = () => {
   };
 
   const deleteTask = (id: string) => {
+    audioService.playPop();
     setTasks(tasks.filter(t => t.id !== id));
   };
 
   const deleteSubtask = (taskId: string, subtaskId: string) => {
+    audioService.playPop();
     setTasks(tasks.map(t => {
       if (t.id === taskId) {
         return { ...t, subtasks: t.subtasks.filter(st => st.id !== subtaskId) };
@@ -92,6 +101,7 @@ const Checklist: React.FC = () => {
   };
 
   const moveTask = (index: number, direction: 'up' | 'down') => {
+    audioService.playTick();
     const newTasks = [...tasks];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= tasks.length) return;
@@ -99,7 +109,6 @@ const Checklist: React.FC = () => {
     setTasks(newTasks);
   };
 
-  // Progress Calculation
   const totalItems = tasks.reduce((acc, t) => acc + 1 + t.subtasks.length, 0);
   const completedItems = tasks.reduce((acc, t) => {
     const mainWeight = t.completed ? 1 : 0;
@@ -141,20 +150,11 @@ const Checklist: React.FC = () => {
               <div 
                 className={`group relative flex items-center gap-2 p-2.5 rounded-2xl transition-all ${task.completed ? 'bg-pink-50/50' : 'bg-white/50 hover:bg-white/80 border border-transparent hover:border-pink-100'}`}
               >
-                {/* Reorder Controls */}
                 <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity absolute -left-1">
-                  <button 
-                    onClick={() => moveTask(index, 'up')}
-                    disabled={index === 0}
-                    className="p-0.5 text-pink-200 hover:text-pink-500 disabled:invisible"
-                  >
+                  <button onClick={() => moveTask(index, 'up')} disabled={index === 0} className="p-0.5 text-pink-200 hover:text-pink-500 disabled:invisible">
                     <ChevronUp size={14} />
                   </button>
-                  <button 
-                    onClick={() => moveTask(index, 'down')}
-                    disabled={index === tasks.length - 1}
-                    className="p-0.5 text-pink-200 hover:text-pink-500 disabled:invisible"
-                  >
+                  <button onClick={() => moveTask(index, 'down')} disabled={index === tasks.length - 1} className="p-0.5 text-pink-200 hover:text-pink-500 disabled:invisible">
                     <ChevronDown size={14} />
                   </button>
                 </div>
@@ -169,23 +169,18 @@ const Checklist: React.FC = () => {
 
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                   <button 
-                    onClick={() => setActiveSubtaskInput(activeSubtaskInput === task.id ? null : task.id)}
+                    onClick={() => { audioService.playTick(); setActiveSubtaskInput(activeSubtaskInput === task.id ? null : task.id); }}
                     className="p-1.5 text-pink-300 hover:text-pink-500 hover:bg-pink-50 rounded-lg"
                     title="Add subtask"
                   >
                     <ListPlus size={16} />
                   </button>
-                  <button 
-                    onClick={() => deleteTask(task.id)} 
-                    className="p-1.5 text-pink-200 hover:text-rose-400 hover:bg-rose-50 rounded-lg"
-                    title="Delete task"
-                  >
+                  <button onClick={() => deleteTask(task.id)} className="p-1.5 text-pink-200 hover:text-rose-400 hover:bg-rose-50 rounded-lg" title="Delete task">
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
 
-              {/* Subtasks List */}
               <div className="ml-10 space-y-1">
                 {task.subtasks.map(st => (
                   <div key={st.id} className="group/sub flex items-center gap-2 p-1.5 rounded-xl bg-pink-50/20 hover:bg-white/40 transition-all border border-transparent hover:border-pink-50">
@@ -195,16 +190,12 @@ const Checklist: React.FC = () => {
                     <span className={`flex-1 text-[13px] transition-all ${st.completed ? 'line-through text-pink-200' : 'text-pink-600 font-medium'}`}>
                       {st.text}
                     </span>
-                    <button 
-                      onClick={() => deleteSubtask(task.id, st.id)} 
-                      className="p-1 text-pink-100 hover:text-rose-300 opacity-0 group-hover/sub:opacity-100 transition-all"
-                    >
+                    <button onClick={() => deleteSubtask(task.id, st.id)} className="p-1 text-pink-100 hover:text-rose-300 opacity-0 group-hover/sub:opacity-100 transition-all">
                       <Trash2 size={12} />
                     </button>
                   </div>
                 ))}
                 
-                {/* Inline Subtask Input */}
                 {activeSubtaskInput === task.id && (
                   <div className="flex gap-2 p-1 animate-in slide-in-from-top-1 duration-200">
                     <input
@@ -216,10 +207,7 @@ const Checklist: React.FC = () => {
                       placeholder="Subtask name..."
                       className="flex-1 px-3 py-1.5 rounded-xl bg-white border border-pink-100 focus:outline-none focus:ring-1 focus:ring-pink-300 text-xs text-pink-600"
                     />
-                    <button
-                      onClick={() => addSubtask(task.id)}
-                      className="px-3 bg-pink-300 text-white rounded-xl hover:bg-pink-400 text-xs font-bold"
-                    >
+                    <button onClick={() => addSubtask(task.id)} className="px-3 bg-pink-300 text-white rounded-xl hover:bg-pink-400 text-xs font-bold">
                       Add
                     </button>
                   </div>
@@ -230,7 +218,6 @@ const Checklist: React.FC = () => {
         )}
       </div>
       
-      {/* Progress Section */}
       <div className="mt-4 pt-4 border-t border-pink-100/50 flex-shrink-0">
         <div className="flex justify-between items-end mb-2">
           <span className="text-[10px] font-bold text-pink-400 uppercase tracking-widest">
@@ -241,10 +228,7 @@ const Checklist: React.FC = () => {
           </span>
         </div>
         <div className="h-2 w-full bg-pink-100/50 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-pink-600 rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(219,39,119,0.3)]"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="h-full bg-pink-600 rounded-full transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
         </div>
       </div>
     </div>

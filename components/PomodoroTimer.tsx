@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Coffee, Zap, Moon } from 'lucide-react';
 import { TimerMode, TimerSettings } from '../types';
+import { audioService } from '../services/audioService';
 
 interface PomodoroTimerProps {
   onModeChange: (mode: TimerMode) => void;
@@ -25,7 +26,8 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const switchMode = useCallback((newMode: TimerMode) => {
+  const switchMode = useCallback((newMode: TimerMode, shouldPlaySound = true) => {
+    if (shouldPlaySound) audioService.playPop();
     setMode(newMode);
     setTimeLeft(settings[newMode]);
     setIsActive(false);
@@ -40,20 +42,25 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
       }, 1000);
     } else if (timeLeft === 0) {
       setIsActive(false);
+      audioService.playChime(); // Play major completion chime
       
       if (mode === 'work') {
         onPomodoroComplete();
-        switchMode('shortBreak');
+        switchMode('shortBreak', false);
       } else {
-        switchMode('work');
+        switchMode('work', false);
       }
     }
     return () => clearInterval(interval);
   }, [isActive, timeLeft, mode, switchMode, onPomodoroComplete]);
 
-  const toggleTimer = () => setIsActive(!isActive);
+  const toggleTimer = () => {
+    audioService.playTick();
+    setIsActive(!isActive);
+  };
   
   const resetTimer = () => {
+    audioService.playPop();
     setIsActive(false);
     setTimeLeft(settings[mode]);
   };
