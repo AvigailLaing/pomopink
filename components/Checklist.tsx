@@ -1,8 +1,76 @@
 
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, CheckCircle2, Circle, ChevronUp, ChevronDown, ListPlus } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Plus, Trash2, CheckCircle2, Circle, ChevronUp, ChevronDown, ListPlus, Heart, Sparkles } from 'lucide-react';
 import { Task, SubTask } from '../types';
 import { audioService } from '../services/audioService';
+
+const Celebration: React.FC = () => {
+  const particles = useMemo(() => {
+    // Vibrant regular confetti colors
+    const colors = [
+      '#FF3E3E', // Red
+      '#FFD700', // Gold
+      '#44FF44', // Green
+      '#00BFFF', // Deep Sky Blue
+      '#FF69B4', // Hot Pink
+      '#9370DB', // Purple
+      '#FFA500'  // Orange
+    ];
+
+    return Array.from({ length: 40 }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 1.2,
+      duration: 2 + Math.random() * 2,
+      width: 6 + Math.random() * 8,
+      height: 8 + Math.random() * 12,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      skew: Math.random() * 20 - 10,
+    }));
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute top-[-40px] animate-confetti opacity-0"
+          style={{
+            left: `${p.left}%`,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            backgroundColor: p.color,
+            width: `${p.width}px`,
+            height: `${p.height}px`,
+            transform: `rotate(${p.rotation}deg) skew(${p.skew}deg)`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes confetti-fall {
+          0% {
+            transform: translateY(0) rotate(0deg) rotateX(0deg) rotateY(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(600px) rotate(720deg) rotateX(360deg) rotateY(180deg);
+            opacity: 0;
+          }
+        }
+        .animate-confetti {
+          animation-name: confetti-fall;
+          animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+          animation-iteration-count: 1;
+          animation-fill-mode: forwards;
+        }
+      `}</style>
+    </div>
+  );
+};
 
 const Checklist: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -16,10 +84,29 @@ const Checklist: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [activeSubtaskInput, setActiveSubtaskInput] = useState<string | null>(null);
   const [subtaskValue, setSubtaskValue] = useState('');
+  const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('pomodoro-tasks', JSON.stringify(tasks));
   }, [tasks]);
+
+  const totalItems = tasks.reduce((acc, t) => acc + 1 + t.subtasks.length, 0);
+  const completedItems = tasks.reduce((acc, t) => {
+    const mainWeight = t.completed ? 1 : 0;
+    const subWeight = t.subtasks.filter(st => st.completed).length;
+    return acc + mainWeight + subWeight;
+  }, 0);
+  const progress = totalItems === 0 ? 0 : (completedItems / totalItems) * 100;
+
+  // Trigger celebration when all tasks are completed
+  useEffect(() => {
+    if (progress === 100 && totalItems > 0) {
+      setShowCelebration(true);
+      audioService.playCelebration();
+      const timer = setTimeout(() => setShowCelebration(false), 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [progress, totalItems]);
 
   const addTask = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -109,21 +196,15 @@ const Checklist: React.FC = () => {
     setTasks(newTasks);
   };
 
-  const totalItems = tasks.reduce((acc, t) => acc + 1 + t.subtasks.length, 0);
-  const completedItems = tasks.reduce((acc, t) => {
-    const mainWeight = t.completed ? 1 : 0;
-    const subWeight = t.subtasks.filter(st => st.completed).length;
-    return acc + mainWeight + subWeight;
-  }, 0);
-  const progress = totalItems === 0 ? 0 : (completedItems / totalItems) * 100;
-
   return (
-    <div className="bg-white/60 backdrop-blur-md p-6 rounded-[32px] border border-white/40 h-full flex flex-col shadow-xl shadow-pink-100/30 overflow-hidden">
+    <div className="bg-white/60 backdrop-blur-md p-6 rounded-[32px] border border-white/40 h-full flex flex-col shadow-xl shadow-pink-100/30 overflow-hidden relative">
+      {showCelebration && <Celebration />}
+      
       <h3 className="text-xl font-bold text-pink-600 mb-4 flex items-center gap-2 flex-shrink-0">
         ✨ Today's Tasks
       </h3>
       
-      <form onSubmit={addTask} className="flex gap-2 mb-4 flex-shrink-0">
+      <form onSubmit={addTask} className="flex gap-2 mb-4 flex-shrink-0 relative z-10">
         <input
           type="text"
           value={inputValue}
@@ -139,7 +220,7 @@ const Checklist: React.FC = () => {
         </button>
       </form>
 
-      <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar relative z-10">
         {tasks.length === 0 ? (
           <div className="text-center py-8 text-pink-300 italic text-sm">
             No tasks yet! Time to plan your magic ✨
@@ -218,7 +299,7 @@ const Checklist: React.FC = () => {
         )}
       </div>
       
-      <div className="mt-4 pt-4 border-t border-pink-100/50 flex-shrink-0">
+      <div className="mt-4 pt-4 border-t border-pink-100/50 flex-shrink-0 relative z-10">
         <div className="flex justify-between items-end mb-2">
           <span className="text-[10px] font-bold text-pink-400 uppercase tracking-widest">
             {Math.round(progress)}% Completed
@@ -228,7 +309,10 @@ const Checklist: React.FC = () => {
           </span>
         </div>
         <div className="h-2 w-full bg-pink-100/50 rounded-full overflow-hidden">
-          <div className="h-full bg-pink-600 rounded-full transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
+          <div 
+            className={`h-full rounded-full transition-all duration-700 ease-out ${progress === 100 ? 'bg-emerald-500' : 'bg-pink-600'}`} 
+            style={{ width: `${progress}%` }} 
+          />
         </div>
       </div>
     </div>

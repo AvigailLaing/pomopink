@@ -16,22 +16,20 @@ class AudioService {
     this.isMuted = muted;
   }
 
-  // A soft, crystalline "ping" instead of a "bloop"
+  // A soft, crystalline "ping"
   playPop() {
     if (this.isMuted) return;
     this.init();
     const now = this.ctx!.currentTime;
     
-    // Core tone
     const osc = this.ctx!.createOscillator();
     const gain = this.ctx!.createGain();
 
     osc.type = 'sine';
-    // Stable, higher frequency for a "clean" feel
     osc.frequency.setValueAtTime(1100, now);
     osc.frequency.exponentialRampToValueAtTime(1080, now + 0.06);
 
-    gain.gain.setValueAtTime(0.05, now); // Lower volume to prevent grating
+    gain.gain.setValueAtTime(0.05, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
 
     osc.connect(gain);
@@ -40,7 +38,6 @@ class AudioService {
     osc.start(now);
     osc.stop(now + 0.06);
 
-    // Subtle high-frequency overtone for "sparkle"
     const osc2 = this.ctx!.createOscillator();
     const gain2 = this.ctx!.createGain();
     osc2.type = 'sine';
@@ -59,7 +56,6 @@ class AudioService {
     this.init();
     const now = this.ctx!.currentTime;
     
-    // Magical sparkle arpeggio (C6, E6, G6, C7)
     const notes = [1046.50, 1318.51, 1567.98, 2093.00];
     
     notes.forEach((freq, i) => {
@@ -78,6 +74,36 @@ class AudioService {
       
       osc.start(now + i * 0.05);
       osc.stop(now + i * 0.05 + 0.4);
+    });
+  }
+
+  // A distinct "Ta-Da!" fanfare
+  playCelebration() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx!.currentTime;
+
+    const playNote = (freq: number, start: number, duration: number, vol: number, type: OscillatorType = 'sine') => {
+      const osc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(vol, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+      osc.connect(gain);
+      gain.connect(this.ctx!.destination);
+      osc.start(start);
+      osc.stop(start + duration);
+    };
+
+    // The "Ta-" (Short upbeat)
+    playNote(783.99, now, 0.15, 0.08, 'triangle'); // G5
+    // The "Da!" (Triumphant chord)
+    const fanfareStart = now + 0.12;
+    [523.25, 659.25, 783.99, 1046.50].forEach(f => {
+      playNote(f, fanfareStart, 0.8, 0.06, 'sine');
+      playNote(f, fanfareStart, 0.5, 0.03, 'triangle');
     });
   }
 
@@ -112,7 +138,6 @@ class AudioService {
     });
   }
 
-  // A tiny, soft high-pitched "tick"
   playTick() {
     if (this.isMuted) return;
     this.init();
@@ -121,7 +146,7 @@ class AudioService {
     const gain = this.ctx!.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(1400, now); // Lowered from 2200 to be less piercing
+    osc.frequency.setValueAtTime(1400, now);
     
     gain.gain.setValueAtTime(0.02, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
