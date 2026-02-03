@@ -16,6 +16,8 @@
 </div>
 ---
 
+![Home Page](./assets/homepage.png)
+
 ## ✨ Key Features
 
 ### 🕒 Aesthetic Pomodoro Timer
@@ -39,6 +41,7 @@
 ### 📊 Daily Summary Dashboard
 * **PDF Export:** Generate a professional, high-resolution daily summary of your stats, completed goals, and notes.
 * **Daily Stats:** Tracks focused minutes, pomodoros completed, and "goals smashed" throughout the day.
+![Daily Summary Dashboard](./assets/summary%20dashboard%20pomopink.png)
 
 ---
 
