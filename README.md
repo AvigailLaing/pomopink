@@ -14,7 +14,6 @@
 **pomopink** is more than just a timer. It’s a digital sanctuary for your productivity. Featuring a soft baby-pink aura heart background, crystalline sound effects, and intelligent AI-powered motivation, it turns deep focus into a magical experience.
 
 </div>
----
 
 ![Home Page](./assets/homepage.png)
 
