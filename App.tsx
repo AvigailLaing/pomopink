@@ -168,7 +168,7 @@ const App: React.FC = () => {
       )}
 
       <footer className="mt-16 text-pink-400/80 text-[10px] font-bold tracking-[0.3em] uppercase flex items-center gap-2 pb-8">
-        Built with <Heart size={10} className="fill-pink-400/50" /> for your cozy focus
+        Built with <Heart size={10} className="fill-pink-400/50" /> by avigail laing
       </footer>
     </div>
   );

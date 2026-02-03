@@ -24,17 +24,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
     try {
       setIsExporting(true);
       
-      // We use html2canvas to create a high-res capture of the dashboard
+      // Capture the dashboard exactly as it appears
       const canvas = await html2canvas(element, {
-        scale: 2, // High resolution
+        scale: 2, // Double resolution for crisp text
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        borderRadius: 48,
         onclone: (clonedDoc) => {
-          // Ensure buttons are hidden in the capture
+          // Hide interactive buttons in the final snapshot
           const actionButtons = clonedDoc.querySelectorAll('.export-action-button');
           actionButtons.forEach(btn => (btn as HTMLElement).style.display = 'none');
+          
+          // Force the cloned element to be fully visible and static for capture
+          const clonedElement = clonedDoc.getElementById('printable-dashboard');
+          if (clonedElement) {
+            clonedElement.style.transform = 'none';
+            clonedElement.style.animation = 'none';
+            clonedElement.style.transition = 'none';
+          }
         }
       });
 
@@ -79,9 +86,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
         {/* Header */}
         <div className="bg-pink-500 p-8 md:p-12 text-white flex justify-between items-start">
           <div>
-            <div className="flex items-center gap-4 mb-2">
-              <Heart className="fill-white text-white" size={32} />
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic">Daily Summary</h2>
+            <div className="flex items-center gap-4 mb-2 h-12 md:h-16">
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic leading-none flex items-center h-full">
+                Daily Summary
+              </h2>
+              <Heart className="fill-white text-white flex-shrink-0" size={32} />
             </div>
             <p className="mt-2 text-pink-100 font-medium opacity-90">{today}</p>
           </div>
@@ -112,22 +121,28 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
               <div className="w-12 h-12 bg-pink-400 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-pink-200">
                 <Trophy size={24} />
               </div>
-              <span className="text-3xl font-black text-pink-600">{pomodorosCompleted}</span>
-              <span className="text-xs font-bold text-pink-400 uppercase tracking-widest mt-1">Pomodoros Done</span>
+              <span className="text-4xl font-black text-pink-600 leading-none h-10 flex items-center justify-center">
+                {pomodorosCompleted}
+              </span>
+              <span className="text-xs font-bold text-pink-400 uppercase tracking-widest mt-2">Pomodoros Done</span>
             </div>
             <div className="bg-pink-50 p-6 rounded-3xl border border-pink-100 flex flex-col items-center text-center">
               <div className="w-12 h-12 bg-pink-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-pink-200">
                 <CheckCircle size={24} />
               </div>
-              <span className="text-3xl font-black text-pink-600">{completedTasks.length}</span>
-              <span className="text-xs font-bold text-pink-400 uppercase tracking-widest mt-1">Goals Smashed</span>
+              <span className="text-4xl font-black text-pink-600 leading-none h-10 flex items-center justify-center">
+                {completedTasks.length}
+              </span>
+              <span className="text-xs font-bold text-pink-400 uppercase tracking-widest mt-2">Goals Smashed</span>
             </div>
             <div className="bg-pink-50 p-6 rounded-3xl border border-pink-100 flex flex-col items-center text-center">
               <div className="w-12 h-12 bg-pink-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-pink-200">
                 <Clock size={24} />
               </div>
-              <span className="text-3xl font-black text-pink-600">{pomodorosCompleted * 25}m</span>
-              <span className="text-xs font-bold text-pink-400 uppercase tracking-widest mt-1">Focused Time</span>
+              <span className="text-4xl font-black text-pink-600 leading-none h-10 flex items-center justify-center">
+                {pomodorosCompleted * 25}m
+              </span>
+              <span className="text-xs font-bold text-pink-400 uppercase tracking-widest mt-2">Focused Time</span>
             </div>
           </div>
 
