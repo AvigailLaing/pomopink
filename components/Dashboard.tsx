@@ -24,18 +24,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
     try {
       setIsExporting(true);
       
-      // Capture the dashboard exactly as it appears
       const canvas = await html2canvas(element, {
-        scale: 2, // Double resolution for crisp text
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
         onclone: (clonedDoc) => {
-          // Hide interactive buttons in the final snapshot
           const actionButtons = clonedDoc.querySelectorAll('.export-action-button');
           actionButtons.forEach(btn => (btn as HTMLElement).style.display = 'none');
           
-          // Force the cloned element to be fully visible and static for capture
           const clonedElement = clonedDoc.getElementById('printable-dashboard');
           if (clonedElement) {
             clonedElement.style.transform = 'none';
@@ -72,18 +69,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-      {/* Background Overlay */}
       <div 
         className="absolute inset-0 bg-pink-200/40 backdrop-blur-xl animate-in fade-in duration-300"
         onClick={onClose}
       />
       
-      {/* Dashboard Container */}
       <div 
         id="printable-dashboard"
         className="relative w-full max-w-4xl bg-white shadow-2xl shadow-pink-300/50 rounded-[48px] overflow-hidden flex flex-col border border-white/50 animate-in zoom-in-95 duration-300"
       >
-        {/* Header */}
         <div className="bg-pink-500 p-8 md:p-12 text-white flex justify-between items-start">
           <div>
             <div className="flex items-center gap-4 mb-2 h-12 md:h-16">
@@ -112,10 +106,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
           </div>
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-8 md:p-12 space-y-12 custom-scrollbar">
-          
-          {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-pink-50 p-6 rounded-3xl border border-pink-100 flex flex-col items-center text-center">
               <div className="w-12 h-12 bg-pink-400 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-pink-200">
@@ -146,7 +137,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
             </div>
           </div>
 
-          {/* Tasks Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div>
               <h4 className="flex items-center gap-2 text-lg font-bold text-pink-600 mb-6 pb-2 border-b-2 border-pink-100">
@@ -194,7 +184,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
             </div>
           </div>
 
-          {/* Notes Section */}
           <div>
             <h4 className="flex items-center gap-2 text-lg font-bold text-pink-600 mb-6 pb-2 border-b-2 border-pink-100">
               <FileText size={18} /> Daily Reflections
@@ -207,7 +196,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-8 text-center text-[10px] text-pink-300 font-bold uppercase tracking-widest border-t border-pink-50 flex items-center justify-center gap-2">
           Captured with Pomopink <Heart size={10} className="fill-pink-200" /> Keep Dreaming
         </div>

@@ -40,7 +40,9 @@ const App: React.FC = () => {
     if (getCooldownRemaining() > 0) return;
     audioService.playPop();
     setIsCheerLoading(true);
-    const pendingCount = tasks.filter((t: any) => !t.completed).length;
+    // Get fresh task state from storage just for the AI cheer
+    const currentTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]');
+    const pendingCount = currentTasks.filter((t: any) => !t.completed).length;
     const newCheer = await getMotivationalCheer(pendingCount);
     setCheer(newCheer);
     setIsCheerLoading(false);
@@ -58,16 +60,23 @@ const App: React.FC = () => {
       refreshCheer();
     }
     
+    // Low frequency ticker only for AI cooldown UI
     const ticker = setInterval(() => {
       setCooldown(getCooldownRemaining());
-      const currTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]');
-      const currNotes = localStorage.getItem('pomodoro-notes') || "";
-      setTasks(currTasks);
-      setNotes(currNotes);
     }, 1000);
     
     return () => clearInterval(ticker);
   }, []);
+
+  // Sync dashboard state only when opening
+  useEffect(() => {
+    if (showDashboard) {
+      const savedTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]');
+      const savedNotes = localStorage.getItem('pomodoro-notes') || "";
+      setTasks(savedTasks);
+      setNotes(savedNotes);
+    }
+  }, [showDashboard]);
 
   useEffect(() => {
     localStorage.setItem('pomopink-stats', JSON.stringify({
@@ -82,8 +91,7 @@ const App: React.FC = () => {
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
-    if (isMuted) {
-      // Small feedback sound when unmuting
+    if (!isMuted === false) { // Logic for auditory feedback on unmute
       setTimeout(() => audioService.playPop(), 50);
     }
   };
