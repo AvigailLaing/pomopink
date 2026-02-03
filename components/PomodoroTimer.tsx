@@ -5,9 +5,10 @@ import { TimerMode, TimerSettings } from '../types';
 
 interface PomodoroTimerProps {
   onModeChange: (mode: TimerMode) => void;
+  onPomodoroComplete: () => void;
 }
 
-const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange }) => {
+const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroComplete }) => {
   const settings: TimerSettings = {
     work: 25 * 60,
     shortBreak: 5 * 60,
@@ -39,12 +40,16 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange }) => {
       }, 1000);
     } else if (timeLeft === 0) {
       setIsActive(false);
-      // Optional: Add notification sound here
-      if (mode === 'work') switchMode('shortBreak');
-      else switchMode('work');
+      
+      if (mode === 'work') {
+        onPomodoroComplete();
+        switchMode('shortBreak');
+      } else {
+        switchMode('work');
+      }
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, mode, switchMode]);
+  }, [isActive, timeLeft, mode, switchMode, onPomodoroComplete]);
 
   const toggleTimer = () => setIsActive(!isActive);
   
@@ -53,7 +58,6 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange }) => {
     setTimeLeft(settings[mode]);
   };
 
-  // SVG Circle Constants
   const size = 256;
   const center = size / 2;
   const radius = 110;
@@ -89,7 +93,6 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange }) => {
           viewBox={`0 0 ${size} ${size}`} 
           className="-rotate-90 block"
         >
-          {/* Background circle */}
           <circle
             cx={center}
             cy={center}
@@ -99,7 +102,6 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange }) => {
             fill="transparent"
             className="text-pink-100"
           />
-          {/* Progress circle */}
           <circle
             cx={center}
             cy={center}

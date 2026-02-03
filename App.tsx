@@ -4,22 +4,36 @@ import AuraHeart from './components/AuraHeart';
 import PomodoroTimer from './components/PomodoroTimer';
 import Checklist from './components/Checklist';
 import Notes from './components/Notes';
+import Dashboard from './components/Dashboard';
 import { getMotivationalCheer, getCooldownRemaining } from './services/geminiService';
-import { TimerMode } from './types';
-import { Heart, Sparkles, Clock } from 'lucide-react';
+import { TimerMode, Task } from './types';
+import { Heart, Sparkles, Clock, LayoutDashboard } from 'lucide-react';
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<TimerMode>('work');
   const [cheer, setCheer] = useState("Let's make today wonderful! ✨");
   const [isCheerLoading, setIsCheerLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [showDashboard, setShowDashboard] = useState(false);
+  
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [notes, setNotes] = useState("");
+  const [pomodorosCompleted, setPomodorosCompleted] = useState(() => {
+    const saved = localStorage.getItem('pomopink-stats');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const lastDate = new Date(parsed.lastUpdated).toDateString();
+      const today = new Date().toDateString();
+      if (lastDate === today) return parsed.pomodorosCompleted;
+    }
+    return 0;
+  });
 
   const refreshCheer = async () => {
     if (getCooldownRemaining() > 0) return;
 
     setIsCheerLoading(true);
-    const savedTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]');
-    const pendingCount = savedTasks.filter((t: any) => !t.completed).length;
+    const pendingCount = tasks.filter((t: any) => !t.completed).length;
     const newCheer = await getMotivationalCheer(pendingCount);
     setCheer(newCheer);
     setIsCheerLoading(false);
@@ -27,21 +41,38 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    // Initial load
+    // Initial sync
     const savedTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]');
-    const pendingCount = savedTasks.filter((t: any) => !t.completed).length;
-    // Don't call API on mount if cooldown is active to save tokens
+    const savedNotes = localStorage.getItem('pomodoro-notes') || "";
+    setTasks(savedTasks);
+    setNotes(savedNotes);
+
     if (getCooldownRemaining() === 0) {
       refreshCheer();
     }
     
-    // Cooldown ticker
-    const timer = setInterval(() => {
+    const ticker = setInterval(() => {
       setCooldown(getCooldownRemaining());
+      // Re-sync tasks and notes in case they changed in components
+      const currTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]');
+      const currNotes = localStorage.getItem('pomodoro-notes') || "";
+      setTasks(currTasks);
+      setNotes(currNotes);
     }, 1000);
     
-    return () => clearInterval(timer);
+    return () => clearInterval(ticker);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('pomopink-stats', JSON.stringify({
+      pomodorosCompleted,
+      lastUpdated: new Date().toISOString()
+    }));
+  }, [pomodorosCompleted]);
+
+  const handlePomodoroComplete = () => {
+    setPomodorosCompleted(prev => prev + 1);
+  };
 
   return (
     <div className="min-h-screen w-full relative p-4 md:p-8 flex flex-col items-center">
@@ -88,13 +119,34 @@ const App: React.FC = () => {
         </div>
 
         <div className="lg:col-span-6 flex justify-center order-1 lg:order-2">
-          <PomodoroTimer onModeChange={setMode} />
+          <PomodoroTimer 
+            onModeChange={setMode} 
+            onPomodoroComplete={handlePomodoroComplete} 
+          />
         </div>
 
         <div className="lg:col-span-3 min-h-[500px] order-3">
           <Notes />
         </div>
       </main>
+
+      {/* Floating Action Button for Dashboard */}
+      <button 
+        onClick={() => setShowDashboard(true)}
+        className="fixed bottom-8 right-8 w-16 h-16 bg-pink-600 text-white rounded-full shadow-2xl shadow-pink-400 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 print:hidden"
+        title="Daily Summary"
+      >
+        <LayoutDashboard size={28} />
+      </button>
+
+      {showDashboard && (
+        <Dashboard 
+          tasks={tasks}
+          notes={notes}
+          pomodorosCompleted={pomodorosCompleted}
+          onClose={() => setShowDashboard(false)}
+        />
+      )}
 
       {/* Footer Info */}
       <footer className="mt-16 text-pink-400/80 text-[10px] font-bold tracking-[0.3em] uppercase flex items-center gap-2 pb-8">
