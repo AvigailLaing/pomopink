@@ -7,7 +7,7 @@ import Notes from './components/Notes';
 import Dashboard from './components/Dashboard';
 import { getMotivationalCheer, getCooldownRemaining } from './services/geminiService';
 import { audioService } from './services/audioService';
-import { TimerMode, Task } from './types';
+import { TimerMode, Task, DailyStats } from './types';
 import { Heart, Sparkles, Clock, LayoutDashboard, Volume2, VolumeX } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -20,15 +20,22 @@ const App: React.FC = () => {
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notes, setNotes] = useState("");
-  const [pomodorosCompleted, setPomodorosCompleted] = useState(() => {
+  
+  // Stats state
+  const [stats, setStats] = useState<Omit<DailyStats, 'lastUpdated'>>(() => {
     const saved = localStorage.getItem('pomopink-stats');
     if (saved) {
       const parsed = JSON.parse(saved);
       const lastDate = new Date(parsed.lastUpdated).toDateString();
       const today = new Date().toDateString();
-      if (lastDate === today) return parsed.pomodorosCompleted;
+      if (lastDate === today) {
+        return {
+          pomodorosCompleted: parsed.pomodorosCompleted || 0,
+          totalFocusedTime: parsed.totalFocusedTime || 0
+        };
+      }
     }
-    return 0;
+    return { pomodorosCompleted: 0, totalFocusedTime: 0 };
   });
 
   useEffect(() => {
@@ -40,7 +47,6 @@ const App: React.FC = () => {
     if (getCooldownRemaining() > 0) return;
     audioService.playPop();
     setIsCheerLoading(true);
-    // Get fresh task state from storage just for the AI cheer
     const currentTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]');
     const pendingCount = currentTasks.filter((t: any) => !t.completed).length;
     const newCheer = await getMotivationalCheer(pendingCount);
@@ -50,7 +56,6 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    // Initial sync
     const savedTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]');
     const savedNotes = localStorage.getItem('pomodoro-notes') || "";
     setTasks(savedTasks);
@@ -60,7 +65,6 @@ const App: React.FC = () => {
       refreshCheer();
     }
     
-    // Low frequency ticker only for AI cooldown UI
     const ticker = setInterval(() => {
       setCooldown(getCooldownRemaining());
     }, 1000);
@@ -68,7 +72,6 @@ const App: React.FC = () => {
     return () => clearInterval(ticker);
   }, []);
 
-  // Sync dashboard state only when opening
   useEffect(() => {
     if (showDashboard) {
       const savedTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]');
@@ -80,18 +83,26 @@ const App: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem('pomopink-stats', JSON.stringify({
-      pomodorosCompleted,
+      ...stats,
       lastUpdated: new Date().toISOString()
     }));
-  }, [pomodorosCompleted]);
+  }, [stats]);
 
   const handlePomodoroComplete = useCallback(() => {
-    setPomodorosCompleted(prev => prev + 1);
+    setStats(prev => ({ ...prev, pomodorosCompleted: prev.pomodorosCompleted + 1 }));
+  }, []);
+
+  const handleFocusTick = useCallback((ms: number) => {
+    setStats(prev => ({ ...prev, totalFocusedTime: prev.totalFocusedTime + ms }));
+  }, []);
+
+  const handleResetFocusTime = useCallback(() => {
+    setStats(prev => ({ ...prev, totalFocusedTime: 0 }));
   }, []);
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
-    if (!isMuted === false) { // Logic for auditory feedback on unmute
+    if (!isMuted === false) {
       setTimeout(() => audioService.playPop(), 50);
     }
   };
@@ -100,7 +111,6 @@ const App: React.FC = () => {
     <div className="min-h-screen w-full relative p-4 md:p-8 flex flex-col items-center">
       <AuraHeart />
       
-      {/* Header */}
       <header className="mb-12 text-center flex flex-col items-center relative">
         <div className="absolute inset-0 bg-white/40 blur-[40px] -z-10 scale-125 rounded-full" />
         
@@ -140,7 +150,6 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content Grid */}
       <main className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         <div className="lg:col-span-3 min-h-[500px] order-2 lg:order-1">
           <Checklist />
@@ -149,7 +158,10 @@ const App: React.FC = () => {
         <div className="lg:col-span-6 flex justify-center order-1 lg:order-2">
           <PomodoroTimer 
             onModeChange={setMode} 
-            onPomodoroComplete={handlePomodoroComplete} 
+            onPomodoroComplete={handlePomodoroComplete}
+            onFocusTick={handleFocusTick}
+            onResetFocusTime={handleResetFocusTime}
+            totalFocusedTime={stats.totalFocusedTime}
           />
         </div>
 
@@ -170,7 +182,8 @@ const App: React.FC = () => {
         <Dashboard 
           tasks={tasks}
           notes={notes}
-          pomodorosCompleted={pomodorosCompleted}
+          pomodorosCompleted={stats.pomodorosCompleted}
+          totalFocusedTime={stats.totalFocusedTime}
           onClose={() => setShowDashboard(false)}
         />
       )}

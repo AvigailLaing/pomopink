@@ -9,10 +9,17 @@ interface DashboardProps {
   onClose: () => void;
   tasks: Task[];
   pomodorosCompleted: number;
+  totalFocusedTime: number;
   notes: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosCompleted, notes }) => {
+const Dashboard: React.FC<DashboardProps> = ({ 
+  onClose, 
+  tasks, 
+  pomodorosCompleted, 
+  totalFocusedTime,
+  notes 
+}) => {
   const [isExporting, setIsExporting] = useState(false);
   const completedTasks = tasks.filter(t => t.completed);
   const pendingTasks = tasks.filter(t => !t.completed);
@@ -38,7 +45,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
             clonedElement.style.transform = 'none';
             clonedElement.style.animation = 'none';
             clonedElement.style.transition = 'none';
-            clonedElement.style.maxHeight = 'none'; // Ensure full height for capture
+            clonedElement.style.maxHeight = 'none';
             clonedElement.style.overflow = 'visible';
           }
           const scrollArea = clonedDoc.querySelector('.custom-scrollbar');
@@ -74,6 +81,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
     day: 'numeric' 
   });
 
+  const formattedFocusedTime = () => {
+    const totalSeconds = Math.floor(totalFocusedTime / 1000);
+    const m = Math.floor(totalSeconds / 60);
+    if (m >= 60) {
+      const h = Math.floor(m / 60);
+      const rm = m % 60;
+      return `${h}h ${rm}m`;
+    }
+    return `${m}m`;
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
       <div 
@@ -85,7 +103,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
         id="printable-dashboard"
         className="relative w-full max-w-4xl max-h-[90vh] bg-white shadow-2xl shadow-pink-300/50 rounded-[40px] md:rounded-[48px] overflow-hidden flex flex-col border border-white/50 animate-in zoom-in-95 duration-300"
       >
-        {/* Fixed Header within the Modal */}
         <div className="bg-pink-500 p-6 md:p-10 text-white flex justify-between items-start flex-shrink-0">
           <div>
             <div className="flex items-center gap-4 mb-1 h-10 md:h-12">
@@ -114,7 +131,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
           </div>
         </div>
 
-        {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-10 md:space-y-12 custom-scrollbar scroll-smooth">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
             <div className="bg-pink-50 p-6 rounded-3xl border border-pink-100 flex flex-col items-center text-center shadow-sm">
@@ -140,7 +156,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
                 <Clock size={20} />
               </div>
               <span className="text-3xl md:text-4xl font-black text-pink-600 leading-none">
-                {pomodorosCompleted * 25}m
+                {formattedFocusedTime()}
               </span>
               <span className="text-[10px] md:text-xs font-bold text-pink-400 uppercase tracking-widest mt-2">Focused Time</span>
             </div>
@@ -207,7 +223,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose, tasks, pomodorosComplete
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-6 md:p-8 text-center text-[10px] text-pink-300 font-black uppercase tracking-[0.3em] border-t border-pink-50 flex items-center justify-center gap-2 flex-shrink-0">
           Captured with Pomopink <Heart size={10} className="fill-pink-200" /> Keep Dreaming
         </div>

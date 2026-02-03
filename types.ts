@@ -22,5 +22,6 @@ export interface TimerSettings {
 
 export interface DailyStats {
   pomodorosCompleted: number;
+  totalFocusedTime: number; // in milliseconds
   lastUpdated: string; // ISO date to reset daily
 }

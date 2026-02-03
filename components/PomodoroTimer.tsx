@@ -1,15 +1,24 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, RotateCcw, Coffee, Zap, Moon } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Zap, Moon, Clock, RefreshCw } from 'lucide-react';
 import { TimerMode, TimerSettings } from '../types';
 import { audioService } from '../services/audioService';
 
 interface PomodoroTimerProps {
   onModeChange: (mode: TimerMode) => void;
   onPomodoroComplete: () => void;
+  onFocusTick: (ms: number) => void;
+  onResetFocusTime: () => void;
+  totalFocusedTime: number;
 }
 
-const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroComplete }) => {
+const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ 
+  onModeChange, 
+  onPomodoroComplete, 
+  onFocusTick,
+  onResetFocusTime,
+  totalFocusedTime 
+}) => {
   const settings: TimerSettings = {
     work: 25 * 60 * 1000,
     shortBreak: 5 * 60 * 1000,
@@ -22,12 +31,21 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
   
   const endTimeRef = useRef<number | null>(null);
   const timerIdRef = useRef<number | null>(null);
+  const lastTickRef = useRef<number>(Date.now());
 
   const formatTime = (ms: number) => {
     const totalSeconds = Math.ceil(ms / 1000);
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatTotalTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
   };
 
   const switchMode = useCallback((newMode: TimerMode, shouldPlaySound = true) => {
@@ -41,17 +59,24 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
 
   useEffect(() => {
     if (isActive) {
-      // Initialize endTime if not already set (e.g. just started)
       if (!endTimeRef.current) {
         endTimeRef.current = Date.now() + msLeft;
       }
+      
+      lastTickRef.current = Date.now();
 
       timerIdRef.current = window.setInterval(() => {
         const now = Date.now();
+        const delta = now - lastTickRef.current;
+        lastTickRef.current = now;
+
         const remaining = Math.max(0, endTimeRef.current! - now);
-        
-        // Only update state if needed to minimize re-renders
         setMsLeft(remaining);
+
+        // Report focus time if in work mode
+        if (mode === 'work') {
+          onFocusTick(delta);
+        }
 
         if (remaining <= 0) {
           setIsActive(false);
@@ -68,18 +93,16 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
       }, 100);
     } else {
       if (timerIdRef.current) clearInterval(timerIdRef.current);
-      // Don't clear endTimeRef here so it persists when pausing/resuming
     }
 
     return () => {
       if (timerIdRef.current) clearInterval(timerIdRef.current);
     };
-  }, [isActive, mode, onPomodoroComplete, switchMode]);
+  }, [isActive, mode, onPomodoroComplete, onFocusTick, switchMode]);
 
   const toggleTimer = () => {
     audioService.playTick();
     if (!isActive) {
-      // About to start: set end time based on current msLeft
       endTimeRef.current = Date.now() + msLeft;
     }
     setIsActive(!isActive);
@@ -90,6 +113,11 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
     setIsActive(false);
     endTimeRef.current = null;
     setMsLeft(settings[mode]);
+  };
+
+  const handleResetClick = () => {
+    audioService.playPop();
+    onResetFocusTime();
   };
 
   const size = 256;
@@ -170,19 +198,39 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
         </div>
       </div>
 
-      <div className="flex gap-4">
-        <button
-          onClick={toggleTimer}
-          className="w-16 h-16 flex items-center justify-center bg-pink-500 hover:bg-pink-600 text-white rounded-full transition-all shadow-lg shadow-pink-200 hover:scale-110 active:scale-95"
-        >
-          {isActive ? <Pause size={28} /> : <Play size={28} className="ml-1" />}
-        </button>
-        <button
-          onClick={resetTimer}
-          className="w-16 h-16 flex items-center justify-center bg-white text-pink-500 border-2 border-pink-100 hover:border-pink-300 rounded-full transition-all shadow-sm hover:scale-110 active:scale-95"
-        >
-          <RotateCcw size={28} />
-        </button>
+      <div className="flex flex-col items-center gap-6 w-full">
+        <div className="flex gap-4">
+          <button
+            onClick={toggleTimer}
+            className="w-16 h-16 flex items-center justify-center bg-pink-500 hover:bg-pink-600 text-white rounded-full transition-all shadow-lg shadow-pink-200 hover:scale-110 active:scale-95"
+          >
+            {isActive ? <Pause size={28} /> : <Play size={28} className="ml-1" />}
+          </button>
+          <button
+            onClick={resetTimer}
+            className="w-16 h-16 flex items-center justify-center bg-white text-pink-500 border-2 border-pink-100 hover:border-pink-300 rounded-full transition-all shadow-sm hover:scale-110 active:scale-95"
+          >
+            <RotateCcw size={28} />
+          </button>
+        </div>
+
+        <div className="flex flex-col items-center gap-1.5 opacity-80 group">
+          <span className="text-[10px] font-black text-pink-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
+            <Clock size={10} className="text-pink-300" /> Total Focus Today
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold text-pink-600 tracking-tight ml-4">
+              {formatTotalTime(totalFocusedTime)}
+            </span>
+            <button
+              onClick={handleResetClick}
+              className="p-1.5 text-pink-200 hover:text-pink-500 hover:bg-pink-50 rounded-lg transition-all"
+              title="Reset focus time"
+            >
+              <RefreshCw size={12} />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
