@@ -41,16 +41,22 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
 
   useEffect(() => {
     if (isActive) {
-      endTimeRef.current = Date.now() + msLeft;
-      // Using a 100ms interval for smooth ring updates without overwhelming React with 60FPS re-renders
+      // Initialize endTime if not already set (e.g. just started)
+      if (!endTimeRef.current) {
+        endTimeRef.current = Date.now() + msLeft;
+      }
+
       timerIdRef.current = window.setInterval(() => {
         const now = Date.now();
         const remaining = Math.max(0, endTimeRef.current! - now);
+        
+        // Only update state if needed to minimize re-renders
         setMsLeft(remaining);
 
         if (remaining <= 0) {
           setIsActive(false);
           clearInterval(timerIdRef.current!);
+          endTimeRef.current = null;
           audioService.playChime();
           if (mode === 'work') {
             onPomodoroComplete();
@@ -62,6 +68,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
       }, 100);
     } else {
       if (timerIdRef.current) clearInterval(timerIdRef.current);
+      // Don't clear endTimeRef here so it persists when pausing/resuming
     }
 
     return () => {
@@ -71,6 +78,10 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
 
   const toggleTimer = () => {
     audioService.playTick();
+    if (!isActive) {
+      // About to start: set end time based on current msLeft
+      endTimeRef.current = Date.now() + msLeft;
+    }
     setIsActive(!isActive);
   };
   
@@ -124,7 +135,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onModeChange, onPomodoroC
             stroke="currentColor"
             strokeWidth="12"
             fill="transparent"
-            className="text-pink-200/20 blur-[2px]"
+            className="text-pink-200/20"
           />
           <circle
             cx={center}

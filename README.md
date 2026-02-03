@@ -18,11 +18,11 @@
 
 <br>
 
-![Pomopink Home Page](./assets/homepage.png)
-
 </div>
 
 ---
+
+![Pomopink Home Page](./assets/homepage.png)
 
 ## ✨ Key Features
 

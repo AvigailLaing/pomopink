@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AuraHeart from './components/AuraHeart';
 import PomodoroTimer from './components/PomodoroTimer';
 import Checklist from './components/Checklist';
@@ -85,9 +85,9 @@ const App: React.FC = () => {
     }));
   }, [pomodorosCompleted]);
 
-  const handlePomodoroComplete = () => {
+  const handlePomodoroComplete = useCallback(() => {
     setPomodorosCompleted(prev => prev + 1);
-  };
+  }, []);
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
