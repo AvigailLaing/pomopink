@@ -50,6 +50,42 @@ class AudioService {
     osc2.stop(now + 0.03);
   }
 
+  // A crisp metallic shield block sound
+  playShieldBlock() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx!.currentTime;
+
+    const osc = this.ctx!.createOscillator();
+    const gain = this.ctx!.createGain();
+    
+    // High-pitched metallic strike
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1800, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    osc.connect(gain);
+    gain.connect(this.ctx!.destination);
+
+    // Add a second harmonic for "ring"
+    const ring = this.ctx!.createOscillator();
+    const ringGain = this.ctx!.createGain();
+    ring.type = 'sine';
+    ring.frequency.setValueAtTime(3200, now);
+    ringGain.gain.setValueAtTime(0.03, now);
+    ringGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    ring.connect(ringGain);
+    ringGain.connect(this.ctx!.destination);
+
+    osc.start(now);
+    ring.start(now);
+    osc.stop(now + 0.2);
+    ring.stop(now + 0.2);
+  }
+
   // A sparkling major-arpeggio chime for task completion
   playSuccess() {
     if (this.isMuted) return;

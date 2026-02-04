@@ -25,3 +25,17 @@ export interface DailyStats {
   totalFocusedTime: number; // in milliseconds
   lastUpdated: string; // ISO date to reset daily
 }
+
+export interface HabitLog {
+  id: string;
+  timestamp: number;
+  mode: TimerMode;
+  note?: string;
+}
+
+export interface HabitTracker {
+  id: string;
+  name: string;
+  emoji: string;
+  history: HabitLog[];
+}
