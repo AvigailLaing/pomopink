@@ -66,7 +66,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   };
 
   const switchMode = useCallback((newMode: TimerMode, shouldPlaySound = true) => {
-    if (shouldPlaySound) audioService.playPop();
+    audioService.playPop();
     setMode(newMode);
     setMsLeft(settings[newMode]);
     setIsActive(false);
@@ -221,7 +221,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       <div className="w-full pt-6 border-t border-pink-100 flex flex-col items-center gap-4">
         <div className="flex flex-col gap-3 w-full max-w-sm">
           {habits.map(habit => (
-            <div key={habit.id} className="relative flex items-center w-full animate-in zoom-in-95 group/habit h-12">
+            <div key={habit.id} className="relative flex items-center w-full animate-in zoom-in-95 group/habit h-auto min-h-[3rem]">
               {/* Contextual Toast Positioning */}
               {activeToast?.habitId === habit.id && (
                 <HabitToast 
@@ -232,23 +232,25 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
                 />
               )}
 
-              {/* Split Control Layout */}
-              <div className="flex items-center w-full bg-white/40 border border-pink-100 rounded-full transition-all group-hover/habit:bg-white group-hover/habit:shadow-md group-hover/habit:shadow-pink-100 overflow-hidden h-full">
-                {/* 1. Emoji (Left) */}
+              {/* Split Control Layout - Changed h-full to h-auto and min-h for expansion */}
+              <div className="flex items-center w-full bg-white/40 border border-pink-100 rounded-[28px] transition-all group-hover/habit:bg-white group-hover/habit:shadow-md group-hover/habit:shadow-pink-100 overflow-hidden h-auto min-h-[3rem] py-2">
+                {/* 1. Emoji (Left) - self-stretch to keep full pill height */}
                 <button 
                   onClick={() => setShowEmojiPickerFor(showEmojiPickerFor === habit.id ? null : habit.id)}
-                  className="px-4 h-full text-xl hover:bg-pink-50 transition-colors border-r border-pink-50"
+                  className="px-4 self-stretch flex items-center text-xl hover:bg-pink-50 transition-colors border-r border-pink-50"
                 >
                   {habit.emoji}
                 </button>
 
-                {/* 2. Name (Center) - Does nothing, text size increased */}
-                <div className="flex-1 px-4 h-full flex items-center text-left select-none overflow-hidden">
-                  <span className="text-base font-bold text-pink-700 truncate">{habit.name}</span>
+                {/* 2. Name (Center) - whitespace-normal and leading-tight for multi-line support */}
+                <div className="flex-1 px-4 flex items-center text-left select-none overflow-hidden py-1">
+                  <span className="text-base font-bold text-pink-700 whitespace-normal break-words leading-tight">
+                    {habit.name}
+                  </span>
                 </div>
 
-                {/* 3. Right Group (Count, +, Dots) */}
-                <div className="flex items-center gap-1.5 px-3 h-full bg-pink-50/30">
+                {/* 3. Right Group (Count, +, Dots) - self-stretch for alignment */}
+                <div className="flex items-center gap-1.5 px-3 self-stretch bg-pink-50/30">
                   <div className="bg-pink-500 text-white min-w-[24px] h-6 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black shadow-sm">
                     {habit.history.length}
                   </div>
