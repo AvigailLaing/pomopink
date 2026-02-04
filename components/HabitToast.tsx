@@ -10,26 +10,16 @@ interface HabitToastProps {
 }
 
 const HabitToast: React.FC<HabitToastProps> = ({ onClose, onSaveNote, trackerName, emoji }) => {
-  const [isExpanding, setIsExpanding] = useState(false);
   const [note, setNote] = useState('');
   const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const handleGlobalClick = () => {
-      if (!isExpanding) onClose();
-    };
-
-    // Auto-dismiss after 3s
-    if (!isExpanding) {
-      timeoutRef.current = window.setTimeout(onClose, 3000);
-      window.addEventListener('click', handleGlobalClick);
-    }
-
+    // Auto-close after 5 seconds of inactivity
+    timeoutRef.current = window.setTimeout(onClose, 5000);
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      window.removeEventListener('click', handleGlobalClick);
     };
-  }, [isExpanding, onClose]);
+  }, [onClose]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,51 +29,55 @@ const HabitToast: React.FC<HabitToastProps> = ({ onClose, onSaveNote, trackerNam
     onClose();
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNote(e.target.value);
+    // Refresh timeout when user is actively typing
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = window.setTimeout(onClose, 8000);
+  };
+
   return (
     <div 
-      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center animate-in slide-in-from-bottom-4 fade-in duration-300"
-      onClick={(e) => e.stopPropagation()} // Prevent auto-dismiss when clicking inside the toast itself
+      className="absolute left-0 bottom-full mb-2 z-50 w-full max-w-sm animate-in zoom-in-95 slide-in-from-bottom-2 duration-200 origin-bottom"
+      onClick={(e) => e.stopPropagation()} 
     >
-      <div className={`bg-white shadow-2xl shadow-pink-200/50 border border-pink-100 rounded-3xl overflow-hidden transition-all duration-300 ${isExpanding ? 'w-64 md:w-80' : 'w-auto'}`}>
-        {!isExpanding ? (
-          <div className="px-6 py-4 flex items-center gap-4 whitespace-nowrap">
-            <span className="text-lg font-black text-pink-600 tracking-tight">Win recorded!</span>
-            <span className="text-2xl">{emoji}</span>
-            <div className="w-[1px] h-6 bg-pink-100 mx-1" />
-            <button 
-              onClick={() => setIsExpanding(true)}
-              className="text-[10px] font-black uppercase tracking-wider text-pink-400 hover:text-pink-600 transition-colors bg-pink-50 px-2.5 py-1.5 rounded-lg"
-            >
-              Add Note?
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="p-4 space-y-3">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-[10px] font-black uppercase text-pink-300 tracking-widest">{trackerName}</span>
-              <button type="button" onClick={onClose} className="text-pink-200 hover:text-pink-400 p-1">
-                <X size={16} />
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <input 
-                autoFocus
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="What happened? ✨"
-                className="flex-1 bg-pink-50 border-none rounded-xl px-4 py-2 text-sm text-pink-700 focus:ring-1 focus:ring-pink-300 outline-none"
-              />
-              <button 
-                type="submit"
-                className="bg-pink-500 text-white p-2 rounded-xl hover:bg-pink-600 transition-colors"
-              >
-                <Send size={16} />
-              </button>
-            </div>
-          </form>
-        )}
+      <div className="bg-white p-3 rounded-2xl shadow-xl border border-pink-100">
+        {/* Header Row */}
+        <div className="flex justify-between items-center mb-2 px-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-pink-300">
+            Resisted urge to {trackerName}
+          </span>
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="p-1 hover:bg-pink-50 rounded-full transition-colors"
+          >
+            <X size={14} className="text-pink-300" />
+          </button>
+        </div>
+
+        {/* Input Row */}
+        <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+          <input 
+            autoFocus
+            type="text"
+            value={note}
+            onChange={handleInputChange}
+            placeholder="What happened? ✨"
+            className="flex-1 bg-white border border-pink-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-200 transition-all"
+          />
+          <button 
+            type="submit"
+            className="bg-pink-500 text-white p-2 rounded-xl hover:bg-pink-600 active:scale-95 transition-all shadow-md shadow-pink-100 flex-shrink-0"
+            title="Save note"
+          >
+            <Send size={16} />
+          </button>
+        </form>
       </div>
+      
+      {/* Subtle pointer arrow */}
+      <div className="absolute left-6 -bottom-1 w-2 h-2 bg-white border-r border-b border-pink-100 rotate-45" />
     </div>
   );
 };

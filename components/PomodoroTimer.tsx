@@ -140,8 +140,8 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   };
 
   const incrementHabit = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // Prevents global Toast closure logic from triggering
-    audioService.playSuccess(); // Consistent audio with task completion
+    e.stopPropagation();
+    audioService.playSuccess();
     const logId = Date.now().toString();
     const log: HabitLog = { id: logId, timestamp: Date.now(), mode };
     setHabits(prev => prev.map(h => h.id === id ? { ...h, history: [...h.history, log] } : h));
@@ -185,7 +185,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   const progress = msLeft / settings[mode];
 
   return (
-    <div className="bg-white/60 backdrop-blur-md p-8 rounded-[40px] shadow-xl shadow-pink-100/50 flex flex-col items-center border border-white/40 transform-gpu relative">
+    <div className="bg-white/60 backdrop-blur-md p-8 rounded-[40px] shadow-xl shadow-pink-100/50 flex flex-col items-center border border-white/40 transform-gpu relative min-h-[600px] w-full">
       <div className="flex gap-2 mb-8 bg-pink-50/50 p-2 rounded-full border border-pink-100">
         <button onClick={() => switchMode('work')} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${mode === 'work' ? 'bg-pink-400 text-white shadow-lg shadow-pink-200' : 'text-pink-400 hover:bg-pink-100'}`}><Zap size={16} /> Work</button>
         <button onClick={() => switchMode('shortBreak')} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${mode === 'shortBreak' ? 'bg-pink-400 text-white shadow-lg shadow-pink-200' : 'text-pink-400 hover:bg-pink-100'}`}><Coffee size={16} /> Break</button>
@@ -221,41 +221,52 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       <div className="w-full pt-6 border-t border-pink-100 flex flex-col items-center gap-4">
         <div className="flex flex-col gap-3 w-full max-w-sm">
           {habits.map(habit => (
-            <div key={habit.id} className="relative flex items-center w-full animate-in zoom-in-95 group/habit">
+            <div key={habit.id} className="relative flex items-center w-full animate-in zoom-in-95 group/habit h-12">
+              {/* Contextual Toast Positioning */}
+              {activeToast?.habitId === habit.id && (
+                <HabitToast 
+                  emoji={habit.emoji}
+                  trackerName={habit.name}
+                  onClose={() => setActiveToast(null)}
+                  onSaveNote={handleSaveNote}
+                />
+              )}
+
               {/* Split Control Layout */}
-              <div className="flex items-center w-full bg-white/40 border border-pink-100 rounded-full transition-all group-hover/habit:bg-white group-hover/habit:shadow-md group-hover/habit:shadow-pink-100 overflow-hidden">
+              <div className="flex items-center w-full bg-white/40 border border-pink-100 rounded-full transition-all group-hover/habit:bg-white group-hover/habit:shadow-md group-hover/habit:shadow-pink-100 overflow-hidden h-full">
                 {/* 1. Emoji (Left) */}
                 <button 
                   onClick={() => setShowEmojiPickerFor(showEmojiPickerFor === habit.id ? null : habit.id)}
-                  className="px-4 py-2 text-xl hover:bg-pink-50 transition-colors border-r border-pink-50"
+                  className="px-4 h-full text-xl hover:bg-pink-50 transition-colors border-r border-pink-50"
                 >
                   {habit.emoji}
                 </button>
 
-                {/* 2. Name (Center) - Does nothing */}
-                <div className="flex-1 px-4 py-2 text-left select-none">
-                  <span className="text-sm font-bold text-pink-700 truncate block">{habit.name}</span>
+                {/* 2. Name (Center) - Does nothing, text size increased */}
+                <div className="flex-1 px-4 h-full flex items-center text-left select-none overflow-hidden">
+                  <span className="text-base font-bold text-pink-700 truncate">{habit.name}</span>
                 </div>
 
                 {/* 3. Right Group (Count, +, Dots) */}
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-pink-50/30">
+                <div className="flex items-center gap-1.5 px-3 h-full bg-pink-50/30">
                   <div className="bg-pink-500 text-white min-w-[24px] h-6 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black shadow-sm">
                     {habit.history.length}
                   </div>
                   
                   <button 
                     onClick={(e) => incrementHabit(e, habit.id)}
-                    className="w-7 h-7 flex items-center justify-center bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-200 active:scale-90 transition-all"
+                    className="w-8 h-8 flex items-center justify-center bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-200 active:scale-90 transition-all"
                     title="Log a win"
                   >
-                    <Plus size={16} strokeWidth={3} />
+                    <Plus size={20} strokeWidth={3} />
                   </button>
 
                   <button 
                     onClick={() => setSelectedHabitId(habit.id)}
-                    className="p-1 text-pink-300 hover:text-pink-600 transition-colors"
+                    className="p-1.5 text-pink-300 hover:text-pink-600 transition-colors"
+                    title="View history"
                   >
-                    <MoreVertical size={16} />
+                    <MoreVertical size={18} />
                   </button>
                 </div>
               </div>
@@ -271,37 +282,28 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           ))}
           
           {isAddingHabit ? (
-            <form onSubmit={addHabit} className="flex items-center gap-2 bg-white px-3 py-2 rounded-full border border-pink-200 shadow-sm animate-in slide-in-from-top-2">
+            <form onSubmit={addHabit} className="flex items-center gap-2 bg-white px-3 py-2 rounded-full border border-pink-200 shadow-sm animate-in slide-in-from-top-2 h-12">
               <input 
                 autoFocus
                 type="text"
                 value={newHabitName}
                 onChange={(e) => setNewHabitName(e.target.value)}
                 placeholder="Name your new habit..."
-                className="bg-transparent border-none outline-none text-xs text-pink-700 px-2 w-full placeholder:text-pink-200"
+                className="bg-transparent border-none outline-none text-sm text-pink-700 px-2 w-full placeholder:text-pink-200 font-bold"
               />
-              <button type="submit" className="text-pink-500 hover:text-pink-700 p-1"><Check size={16} /></button>
-              <button type="button" onClick={() => setIsAddingHabit(false)} className="text-pink-200 hover:text-pink-400 p-1"><X size={16} /></button>
+              <button type="submit" className="text-pink-500 hover:text-pink-700 p-1"><Check size={20} /></button>
+              <button type="button" onClick={() => setIsAddingHabit(false)} className="text-pink-200 hover:text-pink-400 p-1"><X size={20} /></button>
             </form>
           ) : (
             <button 
               onClick={() => setIsAddingHabit(true)}
-              className="text-xs font-bold text-pink-600 hover:text-pink-800 flex items-center justify-center gap-1.5 transition-all p-2.5 bg-pink-50 rounded-2xl hover:bg-pink-100 mt-2"
+              className="text-sm font-bold text-pink-600 hover:text-pink-800 flex items-center justify-center gap-1.5 transition-all p-3 bg-pink-50 rounded-2xl hover:bg-pink-100 mt-2"
             >
-              <Plus size={14} /> Add Habit Tracker
+              <Plus size={16} /> Add Habit Tracker
             </button>
           )}
         </div>
       </div>
-
-      {activeToast && (
-        <HabitToast 
-          emoji={habits.find(h => h.id === activeToast.habitId)?.emoji || '🌷'}
-          trackerName={habits.find(h => h.id === activeToast.habitId)?.name || ''}
-          onClose={() => setActiveToast(null)}
-          onSaveNote={handleSaveNote}
-        />
-      )}
 
       {selectedHabitId && (
         <HabitHistoryModal 

@@ -150,8 +150,8 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        <div className="lg:col-span-3 min-h-[500px] order-2 lg:order-1">
+      <main className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="lg:col-span-3 order-2 lg:order-1">
           <Checklist />
         </div>
 
@@ -165,7 +165,7 @@ const App: React.FC = () => {
           />
         </div>
 
-        <div className="lg:col-span-3 min-h-[500px] order-3">
+        <div className="lg:col-span-3 order-3">
           <Notes />
         </div>
       </main>

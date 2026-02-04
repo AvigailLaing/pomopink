@@ -12,7 +12,7 @@ const Notes: React.FC = () => {
   }, [notes]);
 
   return (
-    <div className="bg-white/60 backdrop-blur-md p-6 rounded-[32px] border border-white/40 h-full flex flex-col shadow-xl shadow-pink-100/30">
+    <div className="bg-white/60 backdrop-blur-md p-6 rounded-[32px] border border-white/40 min-h-[600px] flex flex-col shadow-xl shadow-pink-100/30">
       <h3 className="text-xl font-bold text-pink-600 mb-4 flex items-center gap-2">
         <PenLine size={20} /> Cozy Notes
       </h3>
