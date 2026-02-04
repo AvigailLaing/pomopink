@@ -8,9 +8,16 @@ interface HabitHistoryModalProps {
   onClose: () => void;
   onUpdateNote: (logId: string, newNote: string) => void;
   onDeleteLog: (logId: string) => void;
+  onDeleteHabit: () => void;
 }
 
-const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ habit, onClose, onUpdateNote, onDeleteLog }) => {
+const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ 
+  habit, 
+  onClose, 
+  onUpdateNote, 
+  onDeleteLog,
+  onDeleteHabit 
+}) => {
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [editNoteValue, setEditNoteValue] = useState('');
 
@@ -31,7 +38,7 @@ const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ habit, onClose, o
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-pink-100/60 backdrop-blur-md" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-md rounded-[32px] shadow-2xl border border-pink-100 overflow-hidden flex flex-col max-h-[80vh]">
+      <div className="relative bg-white w-full max-w-md rounded-[32px] shadow-2xl border border-pink-100 overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200">
         <div className="bg-pink-500 p-6 text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
             <span className="text-3xl">{habit.emoji}</span>
@@ -40,9 +47,18 @@ const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ habit, onClose, o
               <p className="text-pink-100 text-xs font-bold uppercase tracking-widest">{habit.history.length} Total Wins</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-xl transition-all">
-            <X size={20} />
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={onDeleteHabit} 
+              className="p-2 hover:bg-rose-600 rounded-xl transition-all text-pink-100 hover:text-white"
+              title="Delete entire tracker"
+            >
+              <Trash2 size={18} />
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-xl transition-all">
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">

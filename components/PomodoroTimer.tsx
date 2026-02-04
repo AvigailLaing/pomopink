@@ -139,6 +139,14 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     setIsAddingHabit(false);
   };
 
+  const deleteHabit = (id: string) => {
+    if (confirm('Are you sure you want to delete this habit tracker and all its history? 🌸')) {
+      audioService.playPop();
+      setHabits(prev => prev.filter(h => h.id !== id));
+      setSelectedHabitId(null);
+    }
+  };
+
   const incrementHabit = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     audioService.playSuccess();
@@ -232,9 +240,9 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
                 />
               )}
 
-              {/* Split Control Layout - Changed h-full to h-auto and min-h for expansion */}
+              {/* Split Control Layout */}
               <div className="flex items-center w-full bg-white/40 border border-pink-100 rounded-[28px] transition-all group-hover/habit:bg-white group-hover/habit:shadow-md group-hover/habit:shadow-pink-100 overflow-hidden h-auto min-h-[3rem] py-2">
-                {/* 1. Emoji (Left) - self-stretch to keep full pill height */}
+                {/* 1. Emoji (Left) */}
                 <button 
                   onClick={() => setShowEmojiPickerFor(showEmojiPickerFor === habit.id ? null : habit.id)}
                   className="px-4 self-stretch flex items-center text-xl hover:bg-pink-50 transition-colors border-r border-pink-50"
@@ -242,14 +250,14 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
                   {habit.emoji}
                 </button>
 
-                {/* 2. Name (Center) - whitespace-normal and leading-tight for multi-line support */}
+                {/* 2. Name (Center) */}
                 <div className="flex-1 px-4 flex items-center text-left select-none overflow-hidden py-1">
                   <span className="text-base font-bold text-pink-700 whitespace-normal break-words leading-tight">
                     {habit.name}
                   </span>
                 </div>
 
-                {/* 3. Right Group (Count, +, Dots) - self-stretch for alignment */}
+                {/* 3. Right Group (Count, +, Dots) */}
                 <div className="flex items-center gap-1.5 px-3 self-stretch bg-pink-50/30">
                   <div className="bg-pink-500 text-white min-w-[24px] h-6 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black shadow-sm">
                     {habit.history.length}
@@ -266,7 +274,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
                   <button 
                     onClick={() => setSelectedHabitId(habit.id)}
                     className="p-1.5 text-pink-300 hover:text-pink-600 transition-colors"
-                    title="View history"
+                    title="View history & settings"
                   >
                     <MoreVertical size={18} />
                   </button>
@@ -313,6 +321,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           onClose={() => setSelectedHabitId(null)}
           onUpdateNote={(logId, note) => updateLogNote(selectedHabitId, logId, note)}
           onDeleteLog={(logId) => deleteLog(selectedHabitId, logId)}
+          onDeleteHabit={() => deleteHabit(selectedHabitId)}
         />
       )}
     </div>
